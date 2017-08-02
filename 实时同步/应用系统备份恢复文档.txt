@@ -1,0 +1,63 @@
+﻿应用程序应急系统:
+    场景:
+        1. 主机挂了
+        2. 应用挂了
+        
+    操作:
+        主机恢复:
+            操作标准:
+                1. 根据标准初始化系统
+                2. 初始化系统配置
+            操作：
+                1. 登录主机
+                    ssh user@192.168.15.39
+                2. roles目录
+                    ansible-playbook -i hosts main.yaml --list-tags  #查看当前系统支持的操作
+                    1. 修改hosts文件
+                        192.168.15.20 ansible_ssh_port=8690 ansible_ssh_user=root ansible_ssh_pass=vats@password
+                        根据格式, 输入准备连接的主机
+                    2. 修改main.yaml
+                        vars:
+                            hostname: test-01-20   #设置新主机名称
+                            ip: 192.168.15.20      #设置新主机的IP地址
+                            ssh_port: 8690         #设置新主机的管理端口
+                        ansible-playbook -i hosts main.yaml --tags  xxx   #执行需要命令
+                        
+                        
+        应用备份:
+            1. 实时上传配置文件至服务器
+            2. 备份设置
+                1. 安装依赖的脚本
+                    yum install epel-release -y
+                    yum install supervisor rsync inotify-tools -y 
+                
+                2. 创建脚本的安装目录
+                    1. 
+                        mkdir -p /data/scripts/sync
+                        cp inotify_monitor.sh conf_sync.sh  /data/scripts/sync/
+                    2. 修改 inotify-tools.sh文件
+                        #backup the data dirs
+                        DATA_DIR=/usr/local/nginx/conf.bak
+                        # path's name of remote server
+                        # 远程文件名的格式:  ip_appname
+                        REMOTE_DIR=192.168.15.201_nginx
+                    3. 修改配置文件
+                        #centos 6
+                        直接编辑 /etc/supervisord.conf , 在最后追加 sync.ini 文件中的内容
+                        #centos 7
+                        把 sync.ini 放到 /etc/supervisord.d/
+                        
+                3. 启动服务即可,观察日志是否应用
+                
+        应用恢复:
+                1. 恢复主机信息(ip地址, 防火墙)
+                2. 同步配置文件
+                    拉取备份文件至应用程序中
+                        sh /data/scripts/sync/conf_sync.sh download remote_back_name loacal_path
+                        
+                3. 检测配置文件
+                    检测配置文件是否正确
+                    
+                4. 服务启动
+                   
+            
